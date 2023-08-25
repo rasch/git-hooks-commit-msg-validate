@@ -19,7 +19,7 @@ command -v wget >/dev/null 2>&1 && curl='wget -qO-'
 command -v curl >/dev/null 2>&1 && curl='curl --silent'
 
 if ! test -f "$emoji_cache" -a -n "$curl"; then
-  $curl "$emoji_url" | tr -d '[:print:]\n' > "$emoji_cache"
+  $curl "$emoji_url" | tr -d '[:alnum:][:punct:][:space:]' > "$emoji_cache"
 fi
 
 if test -f "$emoji_cache"; then
