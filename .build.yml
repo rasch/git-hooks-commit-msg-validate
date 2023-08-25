@@ -1,0 +1,12 @@
+image: alpine/latest
+packages:
+  - shellcheck
+sources:
+  - https://git.sr.ht/~rasch/git-hooks-commit-msg-validate
+tasks:
+  - lint: |
+      cd git-hooks-commit-msg-validate
+      shellcheck commit-msg test.sh
+  - test: |
+      cd git-hooks-commit-msg-validate
+      sh test.sh

@@ -1,0 +1,7 @@
+Fix long lines in commit body
+
+This line is too long for a git commit message. We should only be 72 characters.
+
+Even though this link is longer than 72 chars it won't cause an error
+because it doesn't contain any whitespace.
+https://example.com/this/is/a/longer/link/than/usual/for/testing/purposes

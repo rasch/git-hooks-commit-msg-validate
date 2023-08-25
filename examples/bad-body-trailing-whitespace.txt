@@ -1,0 +1,3 @@
+Fix trailing whitespace in the body
+
+There shouldn't be any trailing whitespace in the body, but there is.   

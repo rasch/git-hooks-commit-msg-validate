@@ -1,0 +1,3 @@
+Fix tabs in commit message body
+
+Holy	tabs	in	my	body.

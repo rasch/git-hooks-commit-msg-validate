@@ -1,0 +1,84 @@
+#!/bin/sh
+
+# Exiting with a non-zero status causes the git commit to abort when
+# using the `commit-msg` hook. The commit message file path is passed
+# as the only argument (`$1`).
+
+error() {
+  errormsg="${errormsg}Line $actualLineNo: $*\\n"
+  errors=$((errors + 1))
+}
+
+# Cache the current supported gitmojis in the same directory as this script.
+
+emoji_url=https://raw.githubusercontent.com/carloscuesta/gitmoji/master/packages/gitmojis/src/gitmojis.json
+emoji_cache="${0%/*}"/.gitmoji
+emoji=
+
+command -v wget >/dev/null 2>&1 && curl='wget -qO-'
+command -v curl >/dev/null 2>&1 && curl='curl --silent'
+
+if ! test -f "$emoji_cache" -a -n "$curl"; then
+  $curl "$emoji_url" | tr -d '[:print:]\n' > "$emoji_cache"
+fi
+
+if test -f "$emoji_cache"; then
+  emoji=$(cat "$emoji_cache")
+fi
+
+# Start validating the commit message, one line at a time.
+
+while IFS= read -r line; do
+  actualLineNo=$((actualLineNo + 1))
+
+  # Skip comment lines
+  printf '%s' "$line" | grep -q '^#' && continue
+
+  lineNo=$((lineNo + 1))
+  length="${#line}"
+
+  # Title line
+  if test "$lineNo" -eq 1; then
+    test -z "$line" && \
+      error 'Ensure the title line is not empty'
+
+    test "$length" -gt 50 && \
+      error 'Limit the title line to 50 characters'
+
+    printf '%s' "$line" | grep -qE "^([$emoji]+ )?[[:upper:]]" || \
+      error 'Begin title line with capitalized word (and optional gitmoji prefix)'
+
+    printf '%s' "$line" | grep -q '[[:space:]]$' && \
+      error 'Remove trailing whitespace from the title line'
+
+    printf '%s' "$line" | grep -q "$(printf '\t')" && \
+      error 'Remove tab characters from the title line'
+
+    printf '%s' "$line" | grep -q '[?:!.,;]$' && \
+      error 'Remove punctuation (?:!.,;) from end of title line'
+
+  # Line between title and body
+  elif test "$lineNo" -eq 2; then
+    test -n "$line" && \
+      error 'Separate title from body with a blank line'
+
+  # Body lines
+  else
+    printf '%s' "$line" | grep -q '[[:space:]]' && test "$length" -gt 72 && \
+      error 'Wrap the body text at 72 characters'
+
+    printf '%s' "$line" | grep -q '[[:space:]]$' && \
+      error 'Remove trailing whitespace from the body line(s)'
+
+    printf '%s' "$line" | grep -q "$(printf '\t')" && \
+      error 'Remove tab characters from the body'
+  fi
+done < "$1"
+
+# Display error summary.
+test -n "$errormsg" && printf >&2 \
+'\033[31m[ERROR]\033[0m Invalid Commit Message\n\n%b
+To recover and edit your commit message, run:\n
+    git commit -eF %s\n\n' "$errormsg" "$1"
+
+exit "${errors:-0}"
